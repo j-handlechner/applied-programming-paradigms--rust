@@ -3,6 +3,8 @@ use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, console, window};
 
 // enum with ALIVE, ZOMBIE, DEAD
 #[wasm_bindgen]
+#[derive(Clone)]
+#[derive(PartialEq)]
 pub enum CellState {
     ALIVE,
     ZOMBIE,
@@ -10,6 +12,7 @@ pub enum CellState {
 }
 
 #[wasm_bindgen]
+#[derive(Clone)]
 pub struct GameOfLifeCell {
     x: usize, // position in the grid (from 0 to WIDTH)
     y: usize,
@@ -49,14 +52,89 @@ impl GameOfLife {
         Self { cells, width, height, cell_size }
     }
 
-    pub fn life(&self, iteration: u8, canvas: HtmlCanvasElement) {
+    pub fn life(&mut self, iteration: u8, canvas: HtmlCanvasElement) {
         // console log the iteration to js 
-        console::log_1(&JsValue::from_str(&format!("Iteration: {}", iteration)));
+        console::log_1(&JsValue::from_str(&format!("life called! {}", iteration)));
+
         self.render(&canvas);
+        console::log_1(&JsValue::from_str(&format!("rendered")));
+
+        self.iterate();
+        console::log_1(&JsValue::from_str(&format!("iterated!")));
+
+        self.render(&canvas);
+        console::log_1(&JsValue::from_str(&format!("rendered!")));
     }
 
     fn get_cell(&self, x: usize, y: usize) -> Option<&GameOfLifeCell> {
         self.cells.get(y * &self.width + x)
+    }
+
+    fn iterate(&mut self) {
+        /*
+        If the cell is Alive and has fewer than two live neighbors it dies and becomes a Zombie(3)
+        If the cell is Alive with two or three live neighbors it survives and stays Alive
+        If the cell is Alive and has more than three live neighbors it dies and becomes a Zombie(3)
+        If the cell is Dead or a Zombie(x) and has exactly three live neighbors, it becomes Alive
+        If the cell is Zombie(x) and has not exactly three live neighbors, it becomes a Zombie(x-1)
+        If the cell is a Zombie(0) and it does not have exactly three live neighbors, it becomes Dead
+        */
+
+        let mut new_cells = self.cells.clone();
+
+        for i in 0..self.height {
+            for j in 0..self.width {
+                let current_cell = self.get_cell(i, j).unwrap();
+                let mut alive_neighbors = 0;
+
+                // go through all the possible neighbors of the current cell
+                for x in -1..=1 {
+                    for y in -1..=1 {
+                        if x == 0 && y == 0 {
+                            continue;
+                        }
+
+                        let neighbor = self.get_cell(i + x as usize, j + y as usize);
+                        if let Some(neighbor) = neighbor {
+                            if neighbor.state == CellState::ALIVE {
+                                alive_neighbors += 1;
+                            }
+                        }
+                    }
+                }
+
+                let current_cell_idx = j * self.width + i;
+                // apply the rules
+                match current_cell.state {
+                    CellState::ALIVE => {
+                        if alive_neighbors < 2 || alive_neighbors > 3 {
+                            new_cells[current_cell_idx].state = CellState::ZOMBIE;
+                            new_cells[current_cell_idx].zombie_score = 3;
+                        }
+                    },
+                    CellState::ZOMBIE => {
+                        if alive_neighbors != 3 {
+                            new_cells[current_cell_idx].zombie_score -= 1;
+                            if new_cells[current_cell_idx].zombie_score == 0 {
+                                new_cells[current_cell_idx].state = CellState::DEAD;
+                            }
+                        } else {
+                            new_cells[current_cell_idx].state = CellState::ALIVE;
+                            new_cells[current_cell_idx].zombie_score = -1;
+                        }
+                    },
+                    CellState::DEAD => {
+                        if alive_neighbors == 3 {
+                            new_cells[current_cell_idx].state = CellState::ALIVE;
+                            new_cells[current_cell_idx].zombie_score = -1;
+                        }
+                    }
+                }
+            }
+        }
+
+        // set the new_cells as current cells and render
+        self.cells = new_cells;
     }
 
     // draw the grid on the canvas
