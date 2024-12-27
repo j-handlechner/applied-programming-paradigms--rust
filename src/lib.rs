@@ -52,18 +52,35 @@ impl GameOfLife {
         Self { cells, width, height, cell_size }
     }
 
+    pub fn resetCells (&mut self) {
+        let mut cells = Vec::with_capacity(self.width * self.height);
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let state = if (x + y) % 2 == 0 {
+                    CellState::ALIVE
+                } else {
+                    CellState::DEAD
+                };
+                cells.push(GameOfLifeCell {
+                    x,
+                    y,
+                    zombie_score: -1,
+                    state
+                });
+            }
+        }
+        self.cells = cells;
+        console::log_1(&JsValue::from_str(&format!("== Reset the cells")));
+    }
+
     pub fn life(&mut self, iteration: u8, canvas: HtmlCanvasElement) {
-        // console log the iteration to js 
-        console::log_1(&JsValue::from_str(&format!("life called! {}", iteration)));
+        self.resetCells();
 
-        self.render(&canvas);
-        console::log_1(&JsValue::from_str(&format!("rendered")));
-
-        self.iterate();
-        console::log_1(&JsValue::from_str(&format!("iterated!")));
-
-        self.render(&canvas);
-        console::log_1(&JsValue::from_str(&format!("rendered!")));
+        for i in 0..iteration {
+            self.iterate();    
+            console::log_1(&JsValue::from_str(&format!("Iteration: {}", i)));
+            self.render(&canvas);
+        }
     }
 
     fn get_cell(&self, x: usize, y: usize) -> Option<&GameOfLifeCell> {
@@ -94,6 +111,10 @@ impl GameOfLife {
                             continue;
                         }
 
+                        if i + x as usize >= self.width || j + y as usize >= self.height {
+                            continue;
+                        }
+
                         let neighbor = self.get_cell(i + x as usize, j + y as usize);
                         if let Some(neighbor) = neighbor {
                             if neighbor.state == CellState::ALIVE {
@@ -113,11 +134,10 @@ impl GameOfLife {
                         }
                     },
                     CellState::ZOMBIE => {
-                        if alive_neighbors != 3 {
+                        if alive_neighbors != 3 && current_cell.zombie_score > 0 {
                             new_cells[current_cell_idx].zombie_score -= 1;
-                            if new_cells[current_cell_idx].zombie_score == 0 {
-                                new_cells[current_cell_idx].state = CellState::DEAD;
-                            }
+                        } else if alive_neighbors != 3 && current_cell.zombie_score == 0 {
+                            new_cells[current_cell_idx].state = CellState::DEAD;
                         } else {
                             new_cells[current_cell_idx].state = CellState::ALIVE;
                             new_cells[current_cell_idx].zombie_score = -1;
@@ -171,7 +191,12 @@ impl GameOfLife {
             );
             context.set_fill_style(&JsValue::from_str(match cell.state {
                 CellState::ALIVE => "black",
-                CellState::ZOMBIE => "red",
+                CellState::ZOMBIE => match cell.zombie_score {
+                    3 => "#3a5a40",
+                    2 => "#588157",
+                    1 => "#a3b18a",
+                    _ => "#dad7cd"
+                },
                 CellState::DEAD => "white"
             }));
             context.fill();

@@ -8,19 +8,38 @@
         canvas {
             border: 1px solid grey;
         }
+
+        p {
+            font-size: 10px;
+            text-transform: uppercase;
+            font-family: sans-serif;
+        }
     </style>
 </head>
 <body>
-    <canvas id="game-of-life-canvas"></canvas>
+    <canvas id="game-of-life-canvas" width="200" height="200"></canvas>
+    <p>current iteration <span id="currentiteration">0</span></p>
     <script type="module">
         import init, { GameOfLife } from './pkg/game_of_life.js';
 
+        const currentIterationSpan = document.getElementById('currentiteration');
         async function run() {
             await init();
 
             const canvas = document.getElementById('game-of-life-canvas');
-            const game = new GameOfLife(30, 30, 10);
-            game.life(2, canvas);
+            const game = new GameOfLife(20, 20, 10);
+            let index = 0;
+            let maxIterations = 15;
+
+            const renderInterval = setInterval(() => {
+                if(index == maxIterations) {
+                    clearInterval(renderInterval);
+                } 
+
+                game.life(index, canvas);
+                currentIterationSpan.innerHTML = index;
+                index++;
+            }, 200)
         }
 
         run();
