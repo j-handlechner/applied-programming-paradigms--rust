@@ -1,0 +1,13 @@
+{
+  "name": "game-of-life",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx http-server",
+    "build-dev": "wasm-pack build --target web && npx http-server"
+  },
+  "author": "Johannes Handlechner",
+  "license": "ISC"
+}
