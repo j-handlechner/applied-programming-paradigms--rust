@@ -96,9 +96,9 @@ impl GameOfLife {
 
         for i in 0..self.height {
             for j in 0..self.width {
-                let current_cell = self.get_cell(i, j).unwrap();
-                let alive_neighbors = self.get_alive_neighbors(i, j);
-                let current_cell_idx = self.get_current_cell_index(i, j);
+                let current_cell = self.get_cell(j, i).unwrap();
+                let alive_neighbors = self.get_alive_neighbors(j, i);
+                let current_cell_idx = self.get_current_cell_index(j, i);
 
                 match current_cell.state {
                     CellState::ALIVE => {
@@ -153,11 +153,17 @@ impl GameOfLife {
         for cell in &self.cells {
             context.begin_path();
             context.rect(
-                cell.x as f64 * self.cell_size as f64,
-                cell.y as f64 * self.cell_size as f64,
+                (cell.x as f64 * self.cell_size as f64),
+                (cell.y as f64 * self.cell_size as f64),
                 self.cell_size as f64,
                 self.cell_size as f64
             );
+
+            /* 
+            let rgb_alpha_value = &(3.0/cell.zombie_score as f32);
+            let rgb_full =  format!("{}{}{}",  "rgba(58, 90, 64, ", rgb_alpha_value,  ")");
+            */
+            
             context.set_fill_style(&JsValue::from_str(match cell.state {
                 CellState::ALIVE => "black",
                 CellState::ZOMBIE => match cell.zombie_score {
@@ -174,15 +180,15 @@ impl GameOfLife {
         Ok(())
     }
 
-    fn get_cell(&self, x: usize, y: usize) -> Option<&GameOfLifeCell> {
-        self.cells.get(y * &self.width + x)
+    fn get_cell(&self, row: usize, column: usize) -> Option<&GameOfLifeCell> {
+        self.cells.get(column * &self.width + row)
     }
     
-    fn get_current_cell_index(&self, i: usize, j: usize) -> usize {
-        (j * self.width + i) as usize
+    fn get_current_cell_index(&self, row: usize, column: usize) -> usize {
+        (column * self.width + row) as usize
     }
 
-    fn get_alive_neighbors(&self, i: usize, j: usize) -> i16 {
+    fn get_alive_neighbors(&self, row: usize, column: usize) -> i16 {
         let mut alive_neighbors = 0;
         for x in -1..=1 {
             for y in -1..=1 {
@@ -190,11 +196,11 @@ impl GameOfLife {
                     continue;
                 }
 
-                if i + x as usize >= self.width || j + y as usize >= self.height {
+                if row as isize + x < 0 || column as isize + y < 0 || row + x as usize >= self.width || column + y as usize >= self.height {
                     continue;
                 }
 
-                let neighbor = self.get_cell(i + x as usize, j + y as usize);
+                let neighbor = self.get_cell(row + x as usize, column + y as usize);
                 if let Some(neighbor) = neighbor {
                     if neighbor.state == CellState::ALIVE {
                         alive_neighbors += 1;

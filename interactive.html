@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game of Life</title>
     <style>
-        canvas {
-            border: 1px solid grey;
+        * {
+            padding: 0;
+            margin: 0;
         }
 
         p {
@@ -14,10 +15,20 @@
             text-transform: uppercase;
             font-family: sans-serif;
         }
+
+        .wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            min-height: 100svh;
+        }
     </style>
 </head>
 <body>
-    <canvas id="game-of-life-canvas" width="200" height="200"></canvas>
+    <div class="wrapper">
+        <canvas id="game-of-life-canvas" width="200" height="200"></canvas>
+    </div>
     <p>current iteration <span id="currentiteration">0</span></p>
     <script type="module">
         import init, { GameOfLife } from './pkg/game_of_life.js';
@@ -27,7 +38,17 @@
             await init();
 
             const canvas = document.getElementById('game-of-life-canvas');
-            const game = new GameOfLife(250, 250, 3);
+            // get device pixel ratio
+            const pixelRatio = window.devicePixelRatio;
+
+            // i want 100 pixels to be there on the width
+            const viewportWidthPercent = 0.85;
+            const amountPixelsWidth = 200;
+            const pixelWidth = window.innerWidth * viewportWidthPercent / amountPixelsWidth;
+
+            const aspectRatio = window.innerHeight / window.innerWidth * viewportWidthPercent;
+
+            const game = new GameOfLife(amountPixelsWidth, amountPixelsWidth * aspectRatio, pixelWidth);
             let index = 0;
             const maxIterations = 1000;
 
@@ -39,7 +60,7 @@
                 game.append_life_iteration(canvas);
                 currentIterationSpan.innerHTML = index;
                 index++;
-            }, 20)
+            }, 50)
         }
 
         run();
