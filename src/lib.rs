@@ -1,7 +1,6 @@
 use wasm_bindgen::prelude::*;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, console, window};
 
-// enum with ALIVE, ZOMBIE, DEAD
 #[wasm_bindgen]
 #[derive(Clone)]
 #[derive(PartialEq)]
@@ -14,7 +13,7 @@ pub enum CellState {
 #[wasm_bindgen]
 #[derive(Clone)]
 pub struct GameOfLifeCell {
-    x: usize, // position in the grid (from 0 to WIDTH)
+    x: usize,
     y: usize,
     zombie_score: i8,
     state: CellState
@@ -136,13 +135,10 @@ impl GameOfLife {
         let window = window().expect("no global `window` exists");
 
         let pixel_ratio = window.device_pixel_ratio();
-        // Set the canvas size in CSS pixels
         let canvas_width = self.width * self.cell_size;
         let canvas_height = self.height * self.cell_size;
 
         canvas.set_attribute("style", &format!("width: {}px; height: {}px;", canvas_width, canvas_height))?;
-        
-        // Scale the canvas dimensions
         canvas.set_width((canvas_width as f64 * pixel_ratio) as u32);
         canvas.set_height((canvas_height as f64 * pixel_ratio) as u32);
 
@@ -151,7 +147,6 @@ impl GameOfLife {
             .unwrap()
             .dyn_into::<CanvasRenderingContext2d>()?;
 
-        // Scale the context
         context.scale(pixel_ratio, pixel_ratio)?;
 
         context.clear_rect(0.0, 0.0, (self.width * self.cell_size) as f64, (self.height * self.cell_size) as f64);
